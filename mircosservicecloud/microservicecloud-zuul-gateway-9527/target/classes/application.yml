@@ -20,3 +20,15 @@ info:
   build.artifactId: $project.artifactId$
   build.version: $project.version$
 
+#代理名称,下面是真实名字和代理名称都可以访问
+#http://localhost:8001/dept/hello
+#代理访问：http://myzuul.com:9527/microservicecloud-provider-dept/dept/hello
+#                    代理       /   服务名字
+zuul:
+  routes:
+    mydept.serviceId: microservicecloud-provider-dept
+    mydept.path: /mydept/**
+  #ignored-services: microservicecloud-dept  #这个就是真实服务名字无法访问，如果是所有的都忽略就用*表示如
+  ignored-services: "*"
+  prefix: /atguigu    #添加前缀
+
