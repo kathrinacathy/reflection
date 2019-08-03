@@ -1,0 +1,50 @@
+package com.mybatis.entity;
+
+import java.util.List;
+
+/**
+ * Created by admin on 2019/7/25 15:57
+ *
+ * @Author: created by admin
+ * @Date: created in 15:57 2019/7/25
+ * @param: bindingResult
+ * @param: result
+ * @return:
+ * @throws:
+ * @Description:
+ * @version:
+ */
+
+public class OraclePage {
+    private int start;
+    private int end;
+    private int count;
+    private List<Employee> emps;
+
+    public int getStart() {
+        return start;
+    }
+    public void setStart(int start) {
+        this.start = start;
+    }
+    public int getEnd() {
+        return end;
+    }
+    public void setEnd(int end) {
+        this.end = end;
+    }
+    public int getCount() {
+        return count;
+    }
+    public void setCount(int count) {
+        this.count = count;
+    }
+    public List<Employee> getEmps() {
+        return emps;
+    }
+    public void setEmps(List<Employee> emps) {
+        this.emps = emps;
+    }
+
+
+}

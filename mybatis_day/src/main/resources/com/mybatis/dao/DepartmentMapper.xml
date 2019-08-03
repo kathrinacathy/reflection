@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mybatis.dao.DepartmentMapper">
+    <cache-ref namespace="com.mybatis.dao.EmployeeMapper"/>
+
+    <resultMap id="myDept" type="com.mybatis.entity.Department">
+        <id column="id" property="id"/>
+        <result column="dept_name" property="departmentName" />
+    </resultMap>
+    <!-- public Department getDeptById(Integer id);-->
+    <select id="getDeptById" resultMap="myDept">
+        select  * from tb_dept where id = #{id}
+    </select>
+
+
+    <!--嵌套结果集的方式，使用collection标签定义关联的集合类型的属性封装规则  -->
+    <resultMap id="myDeptPlus" type="com.mybatis.entity.Department">
+        <id column="dId" property="id"/>
+        <result column="dept_name" property="departmentName" />
+        <!--
+			collection定义关联集合类型的属性的封装规则
+			ofType:指定集合里面元素的类型
+		-->
+        <collection property="emps" ofType="com.mybatis.entity.Employee">
+            <!-- 定义这个集合中元素的封装规则
+            column 表示字段是对应字典表中哪个，如果有别名就是用别名
+            -->
+            <id column="eId" property="id"/>
+            <result column="email" property="email"/>
+            <result column="gender" property="gender" />
+            <result column="last_name" property="lastName"/>
+        </collection>
+    </resultMap>
+    <!-- public Department getDeptByIdPlus(Integer id);-->
+
+    <select id="getDeptByIdPlus" resultMap="myDeptPlus">
+select d.id dId,d.dept_name,e.id eId,e.last_name,e.email,e.gender from TB_DEPT d left join TB_EMPLOYEE e on d.id=e.d_id where d.id = #{id}
+    </select>
+    
+    
+    
+    <resultMap id="MyDeptStep" type="com.mybatis.entity.Department">
+        <id column="id" property="id"/>
+        <result column="dept_name" property="departmentName"/>
+        <collection property="emps" select="com.mybatis.dao.EmployeeMapperPlus.getEmpByDeptId" column="{deptId=id}" fetchType="eager"/>
+    </resultMap>
+    
+<!-- public Department geteptByIdStep(Integer id);-->
+
+    <select id="geteptByIdStep" resultMap="MyDeptStep" >
+        select *  from tb_dept where id = #{id}
+    </select>
+
+</mapper>

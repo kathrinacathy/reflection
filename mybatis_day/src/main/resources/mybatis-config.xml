@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+
+    <!--配置文件中的配置
+    configuration（配置）
+        properties（属性）
+        settings（设置）
+        typeAliases（类型别名）：单个或者批量或者注解
+        typeHandlers（类型处理器）
+        objectFactory（对象工厂）
+        plugins（插件）
+        environments（环境配置）
+            environment（环境变量）
+                transactionManager（事务管理器）
+                dataSource（数据源）
+        databaseIdProvider（数据库厂商标识）
+        mappers（映射器）：可以单个也可以批量
+
+顺序：
+<!ELEMENT configuration (properties?, settings?, typeAliases?, typeHandlers?, objectFactory?, objectWrapperFactory?, reflectorFactory?, plugins?, environments?, databaseIdProvider?, mappers?)>
+
+    -->
+
+
+    <!--
+		1、mybatis可以使用properties来引入外部properties配置文件的内容；
+		resource：引入类路径下的资源
+		url：引入网络路径或者磁盘路径下的资源
+	  -->
+    <properties resource="dbconfig.properties"></properties>
+
+    <!--
+		2、settings包含很多重要的设置项
+		setting:用来设置每一个设置项
+			name：设置项名
+			value：设置项取值
+	 -->
+    <settings>
+        <!--开启驼峰命名法-->
+        <setting name="mapUnderscoreToCamelCase" value="true"/>
+        <!--没有标注@Param注解但是 全局配置：useActualParamName（jdk1.8）：那么获取参数的时候也可以name=参数名-->
+        <setting name="useActualParamName" value="true"/>
+        <setting name="jdbcTypeForNull" value="NULL"/>
+        <setting name="lazyLoadingEnabled" value="true"/>
+        <setting name="aggressiveLazyLoading" value="false"/>
+        <setting name="cacheEnabled" value="true"/>
+   </settings>
+
+    <!-- 3、typeAliases：别名处理器：可以为我们的java类型起别名
+                别名不区分大小写
+        -->
+    <typeAliases>
+        <!-- 1、typeAlias:为某个java类型起别名
+                type:指定要起别名的类型全类名;默认别名就是类名小写；employee
+                alias:指定新的别名
+         -->
+        <!-- <typeAlias type="com.atguigu.mybatis.bean.Employee" alias="emp"/> -->
+
+        <!-- 2、package:为某个包下的所有类批量起别名
+                name：指定包名（为当前包以及下面所有的后代包的每一个类都起一个默认别名（类名小写），）
+        -->
+        <package name="com.mybatis.entity"/>
+
+        <!-- 3、批量起别名的情况下，使用@Alias注解为某个类型指定新的别名 -->
+    </typeAliases>
+
+    <!--类型处理器
+    我们可以重写类型处理器或创建自己的类型处理器来处理不支持的或非标准的类型。
+    • 步骤：
+    • 1）、实现org.apache.ibatis.type.TypeHandler接口或者继承org.apache.ibatis.type.BaseTypeHandler
+    • 2）、指定其映射某个JDBC类型（可选操作）
+    • 3）、在mybatis全局配置文件中注册
+
+    <typeHandlers>
+        <typeHandler handler="org.apache.ibatis.type.InstantTypeHandler"/>
+    </typeHandlers>
+    -->
+    <typeHandlers>
+        <typeHandler handler="com.mybatis.typeHandler.MyEmpStatusTypeHandler" javaType="com.mybatis.entity.EmpStatus"/>
+    </typeHandlers>
+    <!--插件管理：动态代理
+
+插件是MyBatis提供的一个非常强大的机制，我们可以通过插件来修改MyBatis的一些核心行为。插件通过动态代理机制，可以介入四大对象的任何
+一个方法的执行。后面会有专门的章节我们来介绍mybatis运行原理以及插件
+• Executor (update, query, flushStatements, commit, rollback,getTransaction, close, isClosed)
+• ParameterHandler (getParameterObject, setParameters)
+• ResultSetHandler (handleResultSets, handleOutputParameters)
+• StatementHandler (prepare, parameterize, batch, update, query)
+
+    <plugins>
+        <plugin interceptor=""></plugin>
+    </plugins>
+-->
+
+
+
+    <!--
+		4、environments：环境们，mybatis可以配置多种环境 ,default指定使用某种环境。可以达到快速切换环境。
+			environment：配置一个具体的环境信息；必须有两个标签；id代表当前环境的唯一标识
+				transactionManager：事务管理器；
+				Configuration类中配置了JDBC等常量类型
+					type：事务管理器的类型;JDBC(JdbcTransactionFactory)|MANAGED(ManagedTransactionFactory)
+						自定义事务管理器：实现TransactionFactory接口.type指定为全类名
+
+				dataSource：数据源;
+					type:数据源类型;UNPOOLED(UnpooledDataSourceFactory)
+								|POOLED(PooledDataSourceFactory)
+								|JNDI(JndiDataSourceFactory)
+					自定义数据源：实现DataSourceFactory接口，type是全类名
+		 -->
+    
+    
+    <plugins>
+        <!--这两个自己定义的插件：-->
+        <!--<plugin interceptor="com.mybatis.plugin.MyFirstPlugin">
+            <property name="userName" value="root"/>
+            <property name="password" value="132456"/>
+        </plugin>
+        <plugin interceptor="com.mybatis.plugin.MySecondPlugin">
+
+        </plugin>-->
+
+        <!-- com.github.pagehelper为PageHelper类所在包名 -->
+        <plugin interceptor="com.github.pagehelper.PageInterceptor">
+            <!-- 使用下面的方式配置参数，后面会有所有的参数介绍 -->
+            <property name="param1" value="value1"/>
+        </plugin>
+    </plugins>
+    
+    <environments default="dev_oracle">
+
+        <environment id="dev_mysql">
+            <transactionManager type="JDBC"></transactionManager>
+            <dataSource type="POOLED">
+                <property name="driver" value="${jdbc.driver}" />
+                <property name="url" value="${jdbc.url}" />
+                <property name="username" value="${jdbc.username}" />
+                <property name="password" value="${jdbc.password}" />
+            </dataSource>
+        </environment>
+
+        <environment id="dev_oracle">
+            <transactionManager type="JDBC"/>
+            <dataSource type="POOLED">
+                <property name="driver" value="${orcl.driver}"/>
+                <property name="url" value="${orcl.url}"/>
+                <property name="username" value="${orcl.username}"/>
+                <property name="password" value="${orcl.password}"/>
+            </dataSource>
+        </environment>
+    </environments>
+
+    <!-- 5、databaseIdProvider：支持多数据库厂商的；
+		 type="DB_VENDOR"：VendorDatabaseIdProvider
+		 	作用就是得到数据库厂商的标识(驱动getDatabaseProductName())，mybatis就能根据数据库厂商标识来执行不同的sql;
+		 	MySQL，Oracle，SQL Server,xxxx
+	  -->
+    <databaseIdProvider type="DB_VENDOR">
+        <!-- 为不同的数据库厂商起别名 -->
+        <property name="MySQL" value="mysql"/>
+        <property name="Oracle" value="oracle"/>
+        <property name="SQL Server" value="sqlserver"/>
+        <property name="DB2" value="db2"/>
+    </databaseIdProvider>
+
+    <!-- 将我们写好的sql映射文件（EmployeeMapper.xml）一定要注册到全局配置文件（mybatis-config.xml）中 -->
+    <!-- 6、mappers：将sql映射注册到全局配置中 -->
+
+    <mappers>
+        <!--
+			mapper:注册一个sql映射
+				注册配置文件
+				resource：引用类路径下的sql映射文件
+					mybatis/mapper/EmployeeMapper.xml
+				url：引用网路路径或者磁盘路径下的sql映射文件
+					file:///var/mappers/AuthorMapper.xml
+
+				注册接口: 使用映射器接口实现类的完全限定类名
+				class：引用（注册）接口，
+					1、有sql映射文件，映射文件名必须和接口同名，并且放在与接口同一目录下；
+					2、没有sql映射文件，所有的sql都是利用注解写在接口上;
+					推荐：
+						比较重要的，复杂的Dao接口我们来写sql映射文件
+						不重要，简单的Dao接口为了开发快速可以使用注解；
+		-->
+        <!-- <mapper resource="mybatis/mapper/EmployeeMapper.xml"/> -->
+        <!-- <mapper class="com.atguigu.mybatis.dao.EmployeeMapperAnnotation"/> -->
+
+        <!-- 批量注册：将包内的映射器接口实现全部注册为映射器 -->
+
+        <package name="com.mybatis"/>
+        <!--<package name="com.mybatis.daoTest"/>-->
+        <!--<package name="com.mybatis.dao"/>-->
+        <!--<mapper resource="EmployeeMapper.xml"/>-->
+    </mappers>
+
+</configuration>

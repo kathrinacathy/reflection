@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mybatis.dao.EmployeeMapperPlus">
+
+    <resultMap id="mySimpleEmp" type="com.mybatis.entity.Employee">
+        <id column="id" property="id"/>
+        <result column="last_name" property="lastName"/>
+        <result column="email" property="email"/>
+        <result column="gender" property="gender"/>
+
+    </resultMap>
+    <!--public Employee getEmpById(Integer id);-->
+    <select id="getEmpById" resultMap="mySimpleEmp" >
+
+        select * from tb_employee where id = #{id}
+    </select>
+
+    <!--
+	场景一：
+		查询Employee的同时查询员工对应的部门
+		Employee===Department
+		一个员工有与之对应的部门信息；
+		id  last_name  gender    d_id     did  dept_name (private Department dept;)
+	 -->
+    <!--public Employee getEmpAndDept(Integer id);-->
+
+    <!--联合查询：级联属性封装结果集-->
+    <resultMap id="myDifEmp" type="com.mybatis.entity.Employee">
+        <id column="id" property="id"/>
+        <result column="email" property="email"/>
+        <result column="gender" property="gender" />
+        <result column="last_name" property="lastName" />
+        <result column="d_id" property="dept.id"/>
+        <result column="dId" property="dept.id"/>
+        <result column="dept_name" property="dept.departmentName"/>
+    </resultMap>
+
+    <!--
+		使用association定义关联的单个对象的封装规则；
+	 -->
+    <resultMap id="myDifEmp2" type="com.mybatis.entity.Employee">
+        <id column="id" property="id"/>
+        <result column="email" property="email"/>
+        <result column="gender" property="gender" />
+        <result column="last_name" property="lastName" />
+        <result column="d_id" property="dept.id"/>
+
+        <!--  association可以指定联合的javaBean对象
+                property="dept"：指定哪个属性是联合的对象
+                javaType:指定这个属性对象的类型[不能省略]
+                -->
+        <association property="dept" javaType="com.mybatis.entity.Department">
+            <id column="dId" property="id"/>
+            <result column="dept_name" property="departmentName"/>
+        </association>
+    </resultMap>
+    
+    <select id="getEmpAndDept" resultMap="myDifEmp2" >
+        select c.id,c.email,c.gender,c.last_name,c.d_id d_id,d.id dId,d.dept_name detp_name from
+         tb_employee c ,tb_dept d where c.d_id = d.id and c.id = #{id}
+    </select>
+
+    <!-- 使用association进行分步查询：
+            1、先按照员工id查询员工信息
+            2、根据查询员工信息中的d_id值去部门表查出部门信息
+            3、部门设置到员工中；
+         -->
+    <resultMap id="myEmpByStep" type="com.mybatis.entity.Employee">
+        <id column="id" property="id"/>
+        <result column="email" property="email"/>
+        <result column="gender" property="gender" />
+        <result column="last_name" property="lastName"/>
+        <!-- association定义关联对象的封装规则
+	 		select:表明当前属性是调用select指定的方法查出的结果
+	 		column:指定将哪一列的值传给这个方法
+
+	 		流程：使用select指定的方法（传入column指定的这列参数的值）查出对象，并封装给property指定的属性
+	 	 -->
+        <association property="dept" select="com.mybatis.dao.DepartmentMapper.getDeptById" column="{id=d_id}"/>
+    </resultMap>
+
+   <!--public Employee getEmpAndDepByStep(Integer id);-->
+    <select id="getEmpAndDepByStep" resultMap="myEmpByStep" >
+        select * from tb_employee where id = #{id}
+    </select>
+
+
+    <!-- 可以使用延迟加载（懒加载）；(按需加载)
+    Employee==>Dept：
+        我们每次查询Employee对象的时候，都将一起查询出来。
+        部门信息在我们使用的时候再去查询；
+        分段查询的基础之上加上两个配置：显示的指定延迟加载
+        <setting name="lazyLoadingEnabled" value="true"/>
+        <setting name="aggressiveLazyLoading" value="false"/>
+        也可以用fetchType指定部分sql是否延迟加载
+    -->
+
+    <!--
+	场景二：
+		查询部门的时候将部门对应的所有员工信息也查询出来：注释在DepartmentMapper.xml中
+	 -->
+
+    <!--public List<Employee> getEmpByDeptId(Integer deptId);-->
+    <select id="getEmpByDeptId" resultType="com.mybatis.entity.Employee">
+        select * from tb_employee where d_id = #{deptId}
+    </select>
+
+
+
+
+    <!-- =======================鉴别器============================ -->
+    <!-- <discriminator javaType=""></discriminator>
+        鉴别器：mybatis可以使用discriminator判断某列的值，然后根据某列的值改变封装行为
+        封装Employee：
+            如果查出的是女生：就把部门信息查询出来，否则不查询；
+            如果是男生，把last_name这一列的值赋值给email;
+     -->
+    
+
+    <resultMap id="myEmpDis" type="com.mybatis.entity.Employee">
+        <id column="id" property="id"/>
+        <result column="email" property="email"/>
+        <result column="gender" property="gender" />
+        <result column="last_name" property="lastName" />
+        <!--如果是gender=0女生就查询部门信息-->
+        <!--如果是gender=1男生，就将邮件改为lastName-->
+
+        <!--
+                     column：指定判定的列名
+                     javaType：列值对应的java类型  -->
+        <discriminator javaType="string" column="gender" >
+            <case value="0" resultType="com.mybatis.entity.Employee">
+                <association property="dept" select="com.mybatis.dao.DepartmentMapper.getDeptById" column="{id=d_id}"/>
+            </case>
+            <case value="1" resultType="com.mybatis.entity.Employee">
+                <id column="id" property="id"/>
+                <result column="email" property="email"/>
+                <result column="gender" property="gender" />
+                <result column="email" property="lastName" />
+            </case>
+        </discriminator>
+    </resultMap>
+
+
+    <!--public Employee getEmpByDiscriminator(Integer id);-->
+    <select id="getEmpByDiscriminator" resultMap="myEmpDis">
+        select * from tb_employee where id = #{id}
+    </select>
+</mapper>
